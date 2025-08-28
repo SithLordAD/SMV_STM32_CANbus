@@ -3,6 +3,20 @@
 
 #include "main.h"
 
+
+/*
+Example Usage:
+
+CANBUS can1;
+CAN_QuickSetup(&can1, HS4);
+CAN_AddFilterDeviceData(&can1, HS4, Pressure);
+CAN_Run(&can1);
+printf("%.*s", 20, CAN_GetHardware(&can1));
+printf("%f", 20, CAN_GetData(&can1));
+CAN_Send(&can1, 11.38, Pressure);
+*/
+
+
 struct CANBUS{
     uint32_t              TxMailbox;       /* The number of the mail box that transmitted the Tx message */
     CAN_TxHeaderTypeDef   TxHeader;        /* Header containing the information of the transmitted frame */
@@ -15,20 +29,21 @@ struct CANBUS{
     int device_id; //id of the device this is operating on
 
     double data; //data from incoming message 
+    uint8_t filter_bank; //keep track of which filter bank to fill next; we want to keep it between 0 and 14
 
     CAN_HandleTypeDef hcan;
 
 };
 
-void CAN_QuickStart(CANBUS *can, int hardware); 
+void CAN_QuickSetup(CANBUS *can, int hardware); 
 /*
 Purpose: 
-- Initialize hcan object with our tested can settings 
-- Set initial open filter (0x0000)
+- Initialize can object with our tested can settings 
+- Set initial open filter (0x0000) --> gets overwritten if programmer uses AddFilter function
+- Initialize filter_bank to 0
 
 Programmer's POV:
 - Enable CAN1, initialize CAN pins, enable interrupts, and set clock
-- Delete CAN1_Init () and replace function call with CAN_QuickStart(&can1, HS4) for example
 
 Reasons for limiting abstraction (programmer will have to set up ioc in the beginning):
 - stm32f4xx_hal_conf has a vital line: #define HAL_CAN_MODULE_ENABLED
@@ -37,13 +52,18 @@ Reasons for limiting abstraction (programmer will have to set up ioc in the begi
     - if the library does this without the programmer interacting with the ioc, the ioc UI will never show the CAN pins, which could be akward
 
 The following HAL functions will be used:
-- __HAL_RCC_CAN1_CLK_ENABLE();
 - HAL_CAN_Init(&hcan)
 - HAL_CAN_ConfigFilter(&hcan, &sFilterConfig)
+*/
+
+void CAN_Run(CANBUS *hcan);
+/*
+Purpose: Separate starting and initializing CAN. This way, the programmer can set up filters after initializing.
+
+The following HAL functions will be used:
 - HAL_CAN_Start(&hcan)
 - HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING) \
 */
-
 
 double CAN_GetData(CANBUS *can) {return data}
 /*
@@ -58,10 +78,28 @@ char* CAN_GetHardware(CANBUS *can) {return hardware}
 Purpose: return the hardware string assigned in the CAN interrupt
 */
 
-void CAN_AddFilter(CANBUS *can, int device_id, int data_type);
+void CAN_AddFilterDeviceData(CANBUS *can, int device_id, int data_type);
 /*
 Purpose:
-- Allow can object to receive only the data that it needs to reduce the frequency of FIFO handling
+- Receive only the device+datatype that it needs to reduce the frequency of FIFO interrupts
+
+Method:
+- Set filter to encoded ID: [device_id: 4 bits] 000 [data_type: 4 bits]
+- Set mask to 0b 1111 1111 1111
+- Increment filter_bank every call (must be between 0 and 13 to operate)
+
+*/
+
+void CAN_AddFilterDevice(CANBUS *can, int device_id);
+/*
+Purpose:
+- Receive only data from a certain device
+
+Method:
+- Set filter to 0b [device_id: 4 bits] 000 0000
+- Set mask to 0b 1111 111 0000 --> compare only the first 7 bits
+- Increment filter_bank every call (must be between 0 and 13 to operate)
+
 */
 
 void CAN_Send(CANBUS *can, double message, uint8_t data_type);
@@ -74,6 +112,7 @@ Purpose:
 Will use the following HAL functions:
 - HAL_CAN_GetTxMailboxesFreeLevel(&hcan)
 - HAL_CAN_AddTxMessage(&hcan, &TxHeader, TxData, &TxMailbox)
+
 */
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *CanHandle);
