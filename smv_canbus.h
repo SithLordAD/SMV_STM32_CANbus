@@ -2,11 +2,13 @@
 #define __SMVCANBUS_H
 
 #include "stm32f4xx_hal.h"
+#include "smv_board_enums.h"
 
-typedef struct {
+typedef struct CANBUS CANBUS;
+struct CANBUS {
     /* MEMBERS */
     /* DO NOT USE DIRECTLY UNLESS YOU KNOW WHAT YOU'RE DOING */
-    // stm32 stuff. 
+    // stm32 stuff.
     uint32_t              TxMailbox;       /* The number of the mail box that transmitted the Tx message */
     CAN_TxHeaderTypeDef   TxHeader;        /* Header containing the information of the transmitted frame */
     uint8_t               TxData[8]; /* Buffer of the data to send */
@@ -32,12 +34,12 @@ typedef struct {
     void (*addFilterDeviceData)(CANBUS*, int, int); /* receive only the specified type data only from the device specified, filters everything else @param CANBUS* pointer to your CANBUS object @param int the board ID to listen to. reference the enums. @param int the datatype ID to listen to. reference the enums. */
     void (*send)(CANBUS*, double, uint8_t); /* send data to the CAN bus @param CANBUS* pointer to your CANBUS object @param double the data you want to send @param uint8_t the type of data you are sending. reference the enums. */
 
-} CANBUS;
+};
 
 /*
 Constructor workaround in C. Call this when creating your CAN object, and then proceed with the rest of the example.
 */
-CANBUS CAN_new();
+CANBUS CAN_new(void);
 
 /*
 - CubeMX defines a CAN interrupt handler when the programmer enables the interrupt in NVIC settings in ioc

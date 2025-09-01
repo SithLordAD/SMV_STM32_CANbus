@@ -1,33 +1,34 @@
 #include "smv_canbus.h"
 #include <string.h>
 /*
-IMPORTANT: 
+IMPORTANT:
 This file is a just a copy and paste of the functions that were set up in the large main file; The library has not been tested in this form yet
 The main file has enums and char arrays that also need to be included in their own file (we can reuse the files from the old library)
 We need to confirm that we have all the includes we need
 */
+
+void Error_Handler(void); // must be provided by user
 
 typedef union {
 	double num;
 	uint8_t arr[8];
 } DoubleCaster;
 
-CANBUS CAN_new() {
-	CANBUS can;
-	can.init = CAN_QuickSetup;
-	can.begin = CAN_Run;
-	can.getData = CAN_GetData;
-	can.getDataType = CAN_GetDataType;
-	can.getHardware = CAN_GetHardware;
-	can.addFilterDevice = CAN_AddFilterDevice;
-	can.addFilterDeviceData = CAN_AddFilterDeviceData;
-	can.send = CAN_Send;
-	return can;
-}
+const char *devices [] = {
+    "HS1",
+    "HS2",
+    "HS3"
+};
+
+const char *types [] = {
+	"Pressure",
+	"RPM"
+};
+
 
 /*
-Purpose: 
-- Initialize can object with our tested can settings 
+Purpose:
+- Initialize can object with our tested can settings
 - Set initial open filter (0x0000) --> gets overwritten if programmer uses AddFilter function
 - Initialize filter_bank to 0
 
@@ -90,7 +91,7 @@ static void CAN_QuickSetup(CANBUS *can, int hardware, CAN_HandleTypeDef *can_obj
 }
 
 /*
-Purpose: 
+Purpose:
 - Separate starting and initializing CAN. This way, the programmer can set up filters after initializing.
 - Initialize TxHeader (except StdId) --> this will probably be moved to QuickSetup at some point
 
@@ -212,3 +213,18 @@ Method:
 static void CAN_AddFilterDeviceData(CANBUS *can, int device_id, int data_type){
     //TODO: Implement this function
 }
+
+
+CANBUS CAN_new(void) {
+	CANBUS can;
+	can.init = CAN_QuickSetup;
+	can.begin = CAN_Run;
+	can.getData = CAN_GetData;
+	can.getDataType = CAN_GetDataType;
+	can.getHardware = CAN_GetHardware;
+	can.addFilterDevice = CAN_AddFilterDevice;
+	can.addFilterDeviceData = CAN_AddFilterDeviceData;
+	can.send = CAN_Send;
+	return can;
+}
+

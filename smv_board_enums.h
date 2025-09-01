@@ -16,17 +16,4 @@ enum types {
 	RPM
 };
 
-// do not use anything below this line
-
-const char *devices [] = {
-    "HS1",
-    "HS2",
-    "HS3"
-};
-
-const char *types [] = {
-	"Pressure",
-	"RPM"
-};
-
 #endif
