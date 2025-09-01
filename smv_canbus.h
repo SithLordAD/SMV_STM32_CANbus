@@ -4,7 +4,7 @@
 #include "main.h"
 
 
-struct CANBUS{
+typedef struct {
     uint32_t              TxMailbox;       /* The number of the mail box that transmitted the Tx message */
     CAN_TxHeaderTypeDef   TxHeader;        /* Header containing the information of the transmitted frame */
     uint8_t               TxData[8]; /* Buffer of the data to send */
@@ -19,9 +19,8 @@ struct CANBUS{
     uint8_t filter_bank; //keep track of which filter bank to fill next; we want to keep it between 0 and 14
 
     CAN_HandleTypeDef *hcan;
-};
+} CANBUS;
 
-void CAN_QuickSetup(CANBUS *can, int hardware, CAN_HandleTypeDef *can_obj); //implemented
 /*
 Purpose: 
 - Initialize can object with our tested can settings 
@@ -37,8 +36,8 @@ Reasons for limiting abstraction (programmer will have to set up ioc in the begi
 - stm32f4xx_hal_msp sets up the pins
     - if the library does this without the programmer interacting with the ioc, the ioc UI will never show the CAN pins, which could be akward
 */
+void CAN_QuickSetup(CANBUS *can, int hardware, CAN_HandleTypeDef *can_obj); //implemented
 
-void CAN_Run(CANBUS *hcan);
 /*
 Purpose: 
 - Separate starting and initializing CAN. This way, the programmer can set up filters after initializing.
@@ -48,21 +47,23 @@ The following HAL functions will be used:
 - HAL_CAN_Start(&hcan)
 - HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING) \
 */
+void CAN_Run(CANBUS *hcan);
 
-double CAN_GetData(CANBUS *can);
 /*
 Purpose: return the data double assigned in the CAN interrupt
 */
-char* CAN_GetDataType(CANBUS *can);
+double CAN_GetData(CANBUS *can);
+
 /*
 Purpose: return the dataType string assigned in the CAN interrupt
 */
-char* CAN_GetHardware(CANBUS *can);
+char* CAN_GetDataType(CANBUS *can);
+
 /*
 Purpose: return the hardware string assigned in the CAN interrupt
 */
+char* CAN_GetHardware(CANBUS *can);
 
-void CAN_AddFilterDeviceData(CANBUS *can, int device_id, int data_type);
 /*
 Purpose:
 - Receive only the device+datatype that it needs to reduce the frequency of FIFO interrupts
@@ -73,8 +74,8 @@ Method:
 - Increment filter_bank every call (must be between 0 and 13 to operate)
 
 */
+void CAN_AddFilterDeviceData(CANBUS *can, int device_id, int data_type);
 
-void CAN_AddFilterDevice(CANBUS *can, int device_id);
 /*
 Purpose:
 - Receive only data from a certain device
@@ -85,16 +86,16 @@ Method:
 - Increment filter_bank every call (must be between 0 and 13 to operate)
 
 */
+void CAN_AddFilterDevice(CANBUS *can, int device_id);
 
-void CAN_Send(CANBUS *can, double message, uint8_t data_type);
 /*
 Purpose:
 - Cast double message to byte array of 8 bytes (use DoubleCaster union)
 - Form TxHeader.StdId from the device_id and data_type
 - Check mailbox availability and send message
 */
+void CAN_Send(CANBUS *can, double message, uint8_t data_type);
 
-void CAN_Interrupt_Helper(CANBUS *can);
 /*
 - CubeMX defines a CAN interrupt handler when the programmer enables the interrupt in NVIC settings in ioc
 - Any definition of the Fifo0PendingCallback function will override the default definition, if any
@@ -108,4 +109,6 @@ Purpose:
     - Look up which strings they are both associated with and assign the appropriate values to hardware[] and dataType[]
 
 */
+void CAN_Interrupt_Helper(CANBUS *can);
+
 #endif
