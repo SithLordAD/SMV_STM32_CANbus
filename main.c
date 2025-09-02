@@ -1,8 +1,3 @@
-/*
-This main file has all the library functions and supporting enums and char arrays.
-The next step is replicating this functionality by including the external library files.
-*/
-
 #include "main.h"
 #include "smv_canbus.h"
 #include <string.h>
@@ -12,6 +7,7 @@ static void MX_GPIO_Init(void);
 
 CAN_HandleTypeDef hcan1;
 CANBUS can1;
+double send_num = 0;
 
 int main(void)
 {
@@ -22,13 +18,19 @@ int main(void)
 
   can1 = CAN_new(); // construct a CAN object
 
-  can1.init(&can1, HS3, &hcan1); // methods require pointers to self because C has no "this" pointer
+  can1.init(&can1, HS2, &hcan1); // methods require pointers to self because C has no "this" pointer
+  can1.addFilterDeviceData(&can1, HS2, PRESSURE);
   can1.begin(&can1);
 
   while (1)
   {
-	  can1.send(&can1, 54.4, PRESSURE);
-	  HAL_Delay(100);
+
+	  can1.send(&can1, send_num, PRESSURE);
+	  send_num+=0.01;
+	  /*NOTE:
+	   * LED toggle with callback is disabled to accommodate higher frequency
+	   */
+	  HAL_Delay(10);
   }
 }
 
@@ -111,7 +113,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *CanHandle)
         /* Reception Error */
        Error_Handler();
     }else{
-    	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+    	//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
     	CAN_Interrupt_Helper(&can1);
     }
 

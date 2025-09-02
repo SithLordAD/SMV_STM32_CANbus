@@ -15,6 +15,7 @@ struct CANBUS {
     CAN_RxHeaderTypeDef   RxHeaderFIFO0;   /* Header containing the information of the received frame */
     uint8_t               RxDataFIFO0[8];  /* Buffer of the received data */
     CAN_HandleTypeDef *hcan;
+    CAN_FilterTypeDef  sFilterConfig;
     int device_id; // id of your board.
 
     // message data

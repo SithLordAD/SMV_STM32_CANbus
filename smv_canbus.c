@@ -44,11 +44,15 @@ Reasons for limiting abstraction (programmer will have to set up ioc in the begi
 static void CAN_QuickSetup(CANBUS *can, int hardware, CAN_HandleTypeDef *can_obj){
 	can->hcan = can_obj;
 
+	for (int i = 0; i < 8; i++){
+		can->RxDataFIFO0 [i] = 0;
+	}
+
+	can->data = 0;
+
 
 	can->device_id = hardware;
 	can->filter_bank = 0;
-
-	CAN_FilterTypeDef  sFilterConfig;
 
 	can->hcan->Instance = CAN1;
 	can->hcan->Init.Prescaler = 6;
@@ -70,20 +74,20 @@ static void CAN_QuickSetup(CANBUS *can, int hardware, CAN_HandleTypeDef *can_obj
 		Error_Handler();
 	}
 
-	sFilterConfig.SlaveStartFilterBank = 14;           /* Slave start bank Set only once. */
+	can->sFilterConfig.SlaveStartFilterBank = 14;           /* Slave start bank Set only once. */
 
-	sFilterConfig.FilterBank = 0;                      /* Select the filter number 0 */
-	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;  /* Using ID mask mode .. */
-	sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT; /* .. in 32-bit scale */
-	sFilterConfig.FilterIdHigh = 0x0000;
-	sFilterConfig.FilterIdLow = 0x0000;                /* The filter is set to receive only the Standard ID frames */
-	sFilterConfig.FilterMaskIdHigh = 0x0000;           /* Accept all the IDs .. except the Extended frames */
-	sFilterConfig.FilterMaskIdLow = 0x0000;            /* The filter is set to check only on the ID format */
-	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0; /* All the messages accepted by this filter will be received on FIFO1 */
-	sFilterConfig.FilterActivation = ENABLE;           /* Enable the filter number 0 */
+	can->sFilterConfig.FilterBank = 0;                      /* Select the filter number 0 */
+	can->sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;  /* Using ID mask mode .. */
+	can->sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT; /* .. in 32-bit scale */
+	can->sFilterConfig.FilterIdHigh = 0x0000;
+	can->sFilterConfig.FilterIdLow = 0x0000;                /* The filter is set to receive only the Standard ID frames */
+	can->sFilterConfig.FilterMaskIdHigh = 0x0000;           /* Accept all the IDs .. except the Extended frames */
+	can->sFilterConfig.FilterMaskIdLow = 0x0000;            /* The filter is set to check only on the ID format */
+	can->sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0; /* All the messages accepted by this filter will be received on FIFO1 */
+	can->sFilterConfig.FilterActivation = ENABLE;           /* Enable the filter number 0 */
 
 
-	if (HAL_CAN_ConfigFilter(can_obj, &sFilterConfig) != HAL_OK)
+	if (HAL_CAN_ConfigFilter(can_obj, &(can->sFilterConfig)) != HAL_OK)
 	{
 	   /* Filter configuration Error */
 	   Error_Handler();
@@ -197,7 +201,23 @@ Method:
 
 */
 static void CAN_AddFilterDevice(CANBUS *can, int device_id){
-    //TODO: Implement this function
+    can->sFilterConfig.FilterBank = can->filter_bank;
+	can->sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	can->sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	can->sFilterConfig.FilterIdHigh = ((device_id & 0x0F) << 7)<<5;
+	can->sFilterConfig.FilterIdLow = 0x0000;
+	can->sFilterConfig.FilterMaskIdHigh = 0xF000;
+	can->sFilterConfig.FilterMaskIdLow = 0x0000;
+	can->sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+	can->sFilterConfig.FilterActivation = ENABLE;
+
+	if (HAL_CAN_ConfigFilter(can->hcan, &(can->sFilterConfig)) != HAL_OK)
+	{
+	   /* Filter configuration Error */
+	   Error_Handler();
+	}
+
+	can->filter_bank++;
 }
 
 /*
@@ -211,7 +231,23 @@ Method:
 
 */
 static void CAN_AddFilterDeviceData(CANBUS *can, int device_id, int data_type){
-    //TODO: Implement this function
+    can->sFilterConfig.FilterBank = can->filter_bank;
+	can->sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	can->sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	can->sFilterConfig.FilterIdHigh = (((device_id & 0x0F) << 7) + data_type)<<5;
+	can->sFilterConfig.FilterIdLow = 0x0000;
+	can->sFilterConfig.FilterMaskIdHigh = 0b1111000111100000;
+	can->sFilterConfig.FilterMaskIdLow = 0x0000;
+	can->sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+	can->sFilterConfig.FilterActivation = ENABLE;
+
+	if (HAL_CAN_ConfigFilter(can->hcan, &(can->sFilterConfig)) != HAL_OK)
+	{
+	   /* Filter configuration Error */
+	   Error_Handler();
+	}
+
+	can->filter_bank++;
 }
 
 
