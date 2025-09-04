@@ -19,13 +19,13 @@ int main(void)
   can1 = CAN_new(); // construct a CAN object
 
   can1.init(&can1, HS2, &hcan1); // methods require pointers to self because C has no "this" pointer
-  can1.addFilterDeviceData(&can1, HS2, PRESSURE);
+  can1.addFilterDeviceData(&can1, UI, Horn);
   can1.begin(&can1);
 
   while (1)
   {
 
-	  can1.send(&can1, send_num, PRESSURE);
+	  can1.send(&can1, send_num, Pressure);
 	  send_num+=0.01;
 	  /*NOTE:
 	   * LED toggle with callback is disabled to accommodate higher frequency
